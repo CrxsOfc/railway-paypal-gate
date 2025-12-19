@@ -1,0 +1,236 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PayPal Gate</title>
+    <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        :root{--bg:#0c0c0c;--card:#161616;--input:#1a1a1a;--border:#2a2a2a;--text:#fff;--dim:#888;--blue:#003087;--light:#009cde;--green:#00d26a;--red:#ff4757;--yellow:#ffa502}
+        *{margin:0;padding:0;box-sizing:border-box}
+        body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);min-height:100vh;display:flex;flex-direction:column;align-items:center;padding:2rem}
+        .container{width:100%;max-width:480px}
+        .header{text-align:center;margin-bottom:2rem}
+        .logo{display:flex;align-items:center;justify-content:center;gap:.5rem;margin-bottom:.5rem}
+        .logo svg{height:28px}
+        .logo span{font-size:1.4rem;font-weight:700;background:linear-gradient(135deg,var(--blue),var(--light));-webkit-background-clip:text;-webkit-text-fill-color:transparent}
+        .subtitle{color:var(--dim);font-size:.85rem}
+        .badge{display:inline-flex;align-items:center;gap:.4rem;background:rgba(255,71,87,.1);color:var(--red);padding:.4rem .8rem;border-radius:20px;font-size:.7rem;margin-top:.75rem;border:1px solid rgba(255,71,87,.2)}
+        .card{background:var(--card);border:1px solid var(--border);border-radius:14px;padding:1.25rem;margin-bottom:1rem}
+        .title{font-size:.7rem;font-weight:600;text-transform:uppercase;letter-spacing:.1em;color:var(--dim);margin-bottom:.75rem}
+        .input-group{margin-bottom:.75rem}
+        .input-group:last-child{margin-bottom:0}
+        .input-group label{display:block;font-size:.75rem;color:var(--dim);margin-bottom:.3rem}
+        input{width:100%;background:var(--input);border:1px solid var(--border);border-radius:8px;padding:.75rem;font-family:'JetBrains Mono',monospace;font-size:.95rem;color:var(--text)}
+        input:focus{outline:none;border-color:var(--light)}
+        input::placeholder{color:#444}
+        .row{display:grid;grid-template-columns:1fr 1fr 1fr;gap:.5rem}
+        .tabs{display:flex;gap:.5rem;margin-bottom:1rem}
+        .tab{flex:1;padding:.5rem;background:var(--input);border:1px solid var(--border);border-radius:6px;color:var(--dim);font-size:.75rem;cursor:pointer;text-align:center}
+        .tab.active{background:var(--blue);border-color:var(--blue);color:#fff}
+        .btn{width:100%;padding:.9rem;background:linear-gradient(135deg,var(--blue),var(--light));border:none;border-radius:10px;color:#fff;font-family:'Inter',sans-serif;font-size:.95rem;font-weight:600;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:.5rem}
+        .btn:hover{opacity:.9}
+        .btn:disabled{opacity:.5;cursor:not-allowed}
+        .spinner{width:18px;height:18px;border:2px solid rgba(255,255,255,.3);border-top-color:#fff;border-radius:50%;animation:spin .8s linear infinite}
+        @keyframes spin{to{transform:rotate(360deg)}}
+        .result{display:none}
+        .result.show{display:block;animation:fadeIn .3s}
+        @keyframes fadeIn{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:translateY(0)}}
+        .result-header{display:flex;align-items:center;gap:.75rem;margin-bottom:.75rem}
+        .result-icon{width:44px;height:44px;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:1.3rem}
+        .result-icon.ok{background:rgba(0,210,106,.15)}
+        .result-icon.fail{background:rgba(255,71,87,.15)}
+        .result-icon.warn{background:rgba(255,165,2,.15)}
+        .status{font-size:1rem;font-weight:600}
+        .status.ok{color:var(--green)}
+        .status.fail{color:var(--red)}
+        .status.warn{color:var(--yellow)}
+        .msg{font-size:.8rem;color:var(--dim)}
+        .code{display:inline-block;font-family:'JetBrains Mono',monospace;font-size:.7rem;background:var(--input);padding:.2rem .4rem;border-radius:4px;margin-top:.2rem}
+        .log-toggle{display:flex;justify-content:space-between;align-items:center;cursor:pointer;font-size:.75rem;color:var(--dim);padding-top:.75rem;border-top:1px solid var(--border);margin-top:.75rem}
+        .log-content{display:none;margin-top:.5rem;background:var(--bg);border-radius:6px;padding:.5rem;max-height:150px;overflow-y:auto;font-family:'JetBrains Mono',monospace;font-size:.65rem;color:var(--dim)}
+        .log-content.show{display:block}
+        .log-entry{padding:.15rem 0;border-bottom:1px solid var(--border)}
+        .log-entry:last-child{border:none}
+        .console{background:#0a0a0a;border:1px solid var(--border);border-radius:10px;margin-top:1rem;overflow:hidden}
+        .console-head{display:flex;justify-content:space-between;padding:.6rem .75rem;background:var(--card);border-bottom:1px solid var(--border);font-size:.75rem}
+        .console-body{padding:.5rem;max-height:150px;overflow-y:auto;font-family:'JetBrains Mono',monospace;font-size:.7rem}
+        .line{padding:.2rem 0;display:flex;gap:.4rem}
+        .time{color:#444}
+        .info{color:var(--light)}
+        .ok{color:var(--green)}
+        .err{color:var(--red)}
+        .footer{margin-top:1.5rem;text-align:center;font-size:.7rem;color:var(--dim)}
+        ::-webkit-scrollbar{width:4px}
+        ::-webkit-scrollbar-thumb{background:#333;border-radius:2px}
+    </style>
+</head>
+<body>
+<div class="container">
+    <div class="header">
+        <div class="logo">
+            <svg viewBox="0 0 100 25"><path d="M12.5 3.2C11.4 1.2 9 0 5.8 0H.6c-.4 0-.6.3-.7.7L0 24.5c0 .3.2.5.5.5h4.2l1-6.5v.2c.1-.4.4-.7.8-.7h1.6c3.2 0 5.7-1.3 6.4-5 0-.1 0-.2 0-.3.2-1.4.1-2.3-.5-3.2-.2-.1-.3-.3-.5-.3z" fill="#003087"/><path d="M13.3 9.7c0 .1 0 .2 0 .3-.7 3.7-3.2 5-6.4 5H5.3c-.4 0-.7.3-.8.7L3.7 22l-.3 1.9c0 .3.2.5.4.5h3.1c.4 0 .6-.3.7-.6v-.2l.6-3.8v-.2c0-.4.3-.6.7-.6h.4c2.8 0 5-1.1 5.6-4.4.3-1.4.1-2.5-.6-3.3-.2-.2-.4-.4-.7-.6z" fill="#009CDE"/></svg>
+            <span>PayPal Gate</span>
+        </div>
+        <p class="subtitle">Real Card Checker - GraphQL</p>
+        <div class="badge">⚠️ Testing Only</div>
+    </div>
+
+    <div class="card">
+        <div class="title">Input Mode</div>
+        <div class="tabs">
+            <div class="tab active" onclick="setMode('fields')">Fields</div>
+            <div class="tab" onclick="setMode('raw')">Raw</div>
+        </div>
+        <div id="fields">
+            <div class="input-group">
+                <label>Card Number</label>
+                <input type="text" id="card" placeholder="4111 1111 1111 1111" maxlength="19">
+            </div>
+            <div class="row">
+                <div class="input-group"><label>Month</label><input type="text" id="month" placeholder="MM" maxlength="2"></div>
+                <div class="input-group"><label>Year</label><input type="text" id="year" placeholder="YYYY" maxlength="4"></div>
+                <div class="input-group"><label>CVV</label><input type="text" id="cvv" placeholder="123" maxlength="4"></div>
+            </div>
+        </div>
+        <div id="raw" style="display:none">
+            <div class="input-group">
+                <label>CARD|MM|YYYY|CVV</label>
+                <input type="text" id="rawInput" placeholder="4111111111111111|12|2028|123">
+            </div>
+        </div>
+    </div>
+
+    <button class="btn" id="btn" onclick="check()">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+        Check Card
+    </button>
+
+    <div class="card result" id="result">
+        <div class="result-header">
+            <div class="result-icon" id="icon">✓</div>
+            <div>
+                <div class="status" id="status">---</div>
+                <div class="msg" id="msg">---</div>
+                <code class="code" id="code">---</code>
+            </div>
+        </div>
+        <div class="log-toggle" onclick="toggleLog()">
+            <span>Log</span>
+            <span id="arrow">▼</span>
+        </div>
+        <div class="log-content" id="logContent"></div>
+    </div>
+
+    <div class="console">
+        <div class="console-head">
+            <span>Console</span>
+            <span style="cursor:pointer" onclick="clearLog()">Clear</span>
+        </div>
+        <div class="console-body" id="console"></div>
+    </div>
+
+    <div class="footer">@Varipp23 / @RexAw4it • Educational Only</div>
+</div>
+
+<script>
+let mode='fields';
+const API=window.location.origin;
+
+function setMode(m){
+    mode=m;
+    document.querySelectorAll('.tab').forEach((t,i)=>t.classList.toggle('active',i===(m==='fields'?0:1)));
+    document.getElementById('fields').style.display=m==='fields'?'block':'none';
+    document.getElementById('raw').style.display=m==='raw'?'block':'none';
+    log('Mode: '+m,'info');
+}
+
+function fmt(v){
+    const n=v.replace(/\D/g,'');
+    const p=[];
+    for(let i=0;i<n.length&&i<16;i+=4)p.push(n.substring(i,i+4));
+    return p.join(' ');
+}
+
+function log(m,t='info'){
+    const c=document.getElementById('console');
+    const time=new Date().toTimeString().split(' ')[0];
+    c.innerHTML+=`<div class="line"><span class="time">[${time}]</span><span class="${t}">${m}</span></div>`;
+    c.scrollTop=c.scrollHeight;
+}
+
+function clearLog(){
+    document.getElementById('console').innerHTML='';
+    log('Cleared','info');
+}
+
+function toggleLog(){
+    document.getElementById('logContent').classList.toggle('show');
+    document.getElementById('arrow').textContent=document.getElementById('logContent').classList.contains('show')?'▲':'▼';
+}
+
+function showResult(d){
+    const ok=d.status&&d.status.includes('✅');
+    const fail=d.status&&(d.status.includes('❌')||d.status.includes('Error'));
+    document.getElementById('icon').className='result-icon '+(ok?'ok':fail?'fail':'warn');
+    document.getElementById('icon').textContent=ok?'✓':fail?'✗':'?';
+    document.getElementById('status').className='status '+(ok?'ok':fail?'fail':'warn');
+    document.getElementById('status').textContent=d.status||'Unknown';
+    document.getElementById('msg').textContent=d.message||'-';
+    document.getElementById('code').textContent=d.code||'-';
+    const lc=document.getElementById('logContent');
+    lc.innerHTML='';
+    if(d.log)d.log.forEach(e=>{lc.innerHTML+=`<div class="log-entry">${e}</div>`;});
+    document.getElementById('result').classList.add('show');
+}
+
+async function check(){
+    const btn=document.getElementById('btn');
+    let payload={};
+    
+    if(mode==='fields'){
+        payload={
+            card:document.getElementById('card').value.replace(/\s/g,''),
+            month:document.getElementById('month').value,
+            year:document.getElementById('year').value,
+            cvv:document.getElementById('cvv').value
+        };
+        if(!payload.card||payload.card.length<13){log('Invalid card','err');return;}
+        if(!payload.month||!payload.year||!payload.cvv){log('Missing fields','err');return;}
+    }else{
+        const r=document.getElementById('rawInput').value;
+        if(!r||!r.includes('|')){log('Invalid format','err');return;}
+        payload={raw:r};
+    }
+    
+    btn.disabled=true;
+    btn.innerHTML='<div class="spinner"></div> Checking...';
+    log('Starting gate...','info');
+    log('Card: '+(payload.card?payload.card.slice(0,6)+'***'+payload.card.slice(-4):'RAW'),'info');
+    
+    try{
+        const ep=mode==='fields'?'/api/check':'/api/check-raw';
+        const res=await fetch(API+ep,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload)});
+        const data=await res.json();
+        const ok=data.status&&data.status.includes('✅');
+        log('Result: '+data.status,ok?'ok':'err');
+        showResult(data);
+    }catch(e){
+        log('Error: '+e.message,'err');
+        showResult({status:'Error ⚠️',message:e.message,code:'FETCH_ERROR'});
+    }
+    
+    btn.disabled=false;
+    btn.innerHTML='<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg> Check Card';
+}
+
+document.getElementById('card').addEventListener('input',e=>e.target.value=fmt(e.target.value));
+document.getElementById('month').addEventListener('input',e=>{e.target.value=e.target.value.replace(/\D/g,'').slice(0,2);if(parseInt(e.target.value)>12)e.target.value='12';});
+document.getElementById('year').addEventListener('input',e=>e.target.value=e.target.value.replace(/\D/g,'').slice(0,4));
+document.getElementById('cvv').addEventListener('input',e=>e.target.value=e.target.value.replace(/\D/g,''));
+document.querySelectorAll('input').forEach(i=>i.addEventListener('keypress',e=>{if(e.key==='Enter')check();}));
+
+log('Ready','ok');
+</script>
+</body>
+</html>
